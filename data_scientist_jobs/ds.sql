@@ -122,9 +122,9 @@ ORDER BY MAX(salary) - MIN(salary) DESC
 SELECT * FROM salaries
 SELECT job_title
 FROM
-(SELECT job_title, COUNT(*) AS Total_count_of_a_role, DENSE_RANK() OVER(ORDER BY COUNT(*) DESC) AS rank_count
-FROM salaries
-GROUP BY work_year, job_title) gg
+	(SELECT job_title, COUNT(*) AS Total_count_of_a_role, DENSE_RANK() OVER(ORDER BY COUNT(*) DESC) AS rank_count
+	FROM salaries
+	GROUP BY work_year, job_title) gg
 WHERE rank_count IN (1,2,3)
 -- results: Data Engineer, Data Scientist, Data Analyst
 
@@ -206,7 +206,5 @@ WHERE company_location = 'INR' AND company_size = 'S' AND job_title = 'Data Scie
 GROUP BY company_size
 
 -- results: 
--- 1. large size companies provide data scientists with 2 times more than middle size companies 
+-- Large size companies provide data scientists with 2 times more than middle size companies 
 -- and 2.5 times more than small size companies
-
-SELECT * FROM salaries
