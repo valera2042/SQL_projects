@@ -16,6 +16,9 @@ SELECT * FROM bikes
 --10. What were the stations with the highest percentage of trips that ended at the same station?
 --11. How many trip were taken om the next day after the start of a trip?
 
+--12. Prepare data for the visualization by Tableau
+--13. Did members trips duration was the same as for non members?
+
 
 SELECT day_of_start, AVG(total_diff_seconds) AS average_diff_by_day
 FROM
@@ -280,3 +283,71 @@ WHERE (ended_day - start_day) > 0
 
 -- results: about 376 trips were longevity of 1 day or more
 
+
+--12. Did members trips duration was the same as for non members? average trip time per person?
+
+-- average trip time per person
+SELECT member_casual,
+AVG(DATEDIFF(HOUR, started_at, ended_at) * 3600 + 
+DATEDIFF(MINUTE, started_at, ended_at) * 60 +
+DATEDIFF(SECOND, started_at, ended_at)) AS total_diff_seconds,
+COUNT(*) AS count_users,
+ROUND(AVG(DATEDIFF(HOUR, started_at, ended_at) * 3600 + 
+DATEDIFF(MINUTE, started_at, ended_at) * 60 +
+DATEDIFF(SECOND, started_at, ended_at))/ CAST(COUNT(*) AS FLOAT), 2) AS average_time_users
+FROM bikes
+GROUP BY member_casual
+
+-- results: in general CASUAL travelled average time/per user of 0.56 while members of 0.06 
+
+
+
+--13. Prepare data for the visualization by Tableau
+
+SELECT started_at, ride_id, start_lat, end_lat, start_lng, end_lng, 
+DATENAME(WEEKDAY, started_at) AS weekday_of_start,
+DATEPART(DAY, started_at) AS day_of_start,
+FORMAT(started_at,'hh tt') AS time_of_start
+--INTO gamer
+FROM bikes
+ORDER BY FORMAT(started_at,'hh tt')
+
+
+SELECT started_at, ride_id, start_lat, end_lat, start_lng, end_lng, 
+DATENAME(WEEKDAY, started_at) AS weekday_of_start,
+DATEPART(DAY, started_at) AS day_of_start,
+FORMAT(started_at,'hh tt') AS time_of_start
+--INTO gamer
+FROM bikes
+
+
+-- FINAL VERSION
+SELECT ride_id, start_lat, end_lat, start_lng, end_lng, weekday_of_start,time_hours,
+COUNT(count_per_day) OVER(PARTITION BY (weekday_of_start)) AS total_count_per_day
+--INTO gamer_1
+FROM
+
+(SELECT started_at, ride_id, start_lat, end_lat, start_lng, end_lng, 
+DATENAME(WEEKDAY, started_at) AS weekday_of_start, 
+DATEPART(DAY, started_at) AS day_of_start,
+DATEPART(HOUR, started_at) AS hour_of_start,
+FORMAT(CAST( started_at as datetime),'hh:mm') AS hh_mm,
+CAST(FORMAT(CAST( started_at as smalldatetime),'hh') AS VARCHAR(50)) + ':00' AS time_hours,
+
+COUNT(ride_id) OVER(PARTITION BY DATENAME(WEEKDAY, started_at) ORDER BY ride_id) AS count_per_day
+FROM bikes) hh
+ORDER BY hour_of_start ASC
+
+SELECT started_at, COUNT(ride_id) AS rides, start_lat, end_lat, start_lng, end_lng, 
+DATENAME(WEEKDAY, started_at) AS weekday_of_start, 
+FORMAT(started_at,'hh tt') AS time_of_start
+FROM bikes
+GROUP BY DATENAME(WEEKDAY, started_at), start_lat, end_lat, start_lng, end_lng, FORMAT(started_at,'hh tt')
+
+
+SELECT '20' + '2020-04-22 17:58:37' 
+
+SELECT * FROM bikes
+
+
+--FINAL: DATA IS PREPARED FOR TRHE ANALYSIS BY TABLEAU
