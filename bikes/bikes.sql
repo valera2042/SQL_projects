@@ -14,14 +14,8 @@ SELECT * FROM bikes
 --8. What was the average number of trip per day?
 --9. What was the percentage of days with trip duration higher than that of the monthly average trip duration?
 --10. What were the stations with the highest percentage of trips that ended at the same station?
---11. During what days trip were the longest?
+--11. How many trip were taken om the next day after the start of a trip?
 
--- 11. average trip duration
--- Join, case, iif, ratio
-
---1. Find the day in a month with the longest average trip time starting at the trip start
-
--- find the longest average trip time
 
 SELECT day_of_start, AVG(total_diff_seconds) AS average_diff_by_day
 FROM
@@ -222,14 +216,39 @@ ORDER BY COUNT(ride_id) DESC
 
 --9. What was the percentage of days with trip duration higher than that of the monthly average trip duration?
 
-SELECT * FROM bikes
+
+SELECT ride_id,
+-- average trip duration
+DATEDIFF(HOUR, started_at, ended_at) * 3600 + 
+DATEDIFF(MINUTE, started_at, ended_at) * 60 +
+DATEDIFF(SECOND, started_at, ended_at) AS total_diff_seconds
+FROM bikes
+
+
+SELECT DATEPART(DAY, started_at),
+AVG(DATEDIFF(HOUR, started_at, ended_at) * 3600 + 
+DATEDIFF(MINUTE, started_at, ended_at) * 60 +
+DATEDIFF(SECOND, started_at, ended_at)) AS total_diff_seconds
+FROM bikes
+GROUP BY DATEPART(DAY, started_at)
+HAVING 
+		AVG(DATEDIFF(HOUR, started_at, ended_at) * 3600 + 
+		DATEDIFF(MINUTE, started_at, ended_at) * 60 +
+		DATEDIFF(SECOND, started_at, ended_at)) > (SELECT 
+								-- average trip duration
+												AVG(DATEDIFF(HOUR, started_at, ended_at) * 3600 + 
+												DATEDIFF(MINUTE, started_at, ended_at) * 60 +
+												DATEDIFF(SECOND, started_at, ended_at)) AS average_diff_seconds
+												FROM bikes)
+
+-- results: 12 days out of 30 days (month) had the average trip duration more than average per month
 
 
 --10. What were the stations with the highest percentage of trips that ended at the same station?
 
 SELECT the_same_station, 
-CAST(same AS float)/CAST(total AS float) AS ratio_yes, 
-CAST(not_the_same AS float)/CAST(total AS float) AS ratio_no 
+CAST(same AS float)/CAST(total AS float) AS ratio_yes,
+CAST(not_the_same AS float)/CAST(total AS float) AS ratio_no, same, not_the_same
 
 FROM
 	(SELECT the_same_station, COUNT(ride_id) AS count_trips, SUM(IIF(the_same_station='Yes', 1, 0)) AS same,
@@ -239,4 +258,25 @@ FROM
 	(SELECT ride_id, IIF(start_station_id = end_station_id, 'yes', 'no') AS the_same_station
 	FROM bikes) gg
 GROUP BY the_same_station) HH
+
+SELECT 12445/72331
+SELECT (CAST 2 AS FLOAT)/10
+
+-- results: trips ended up at the same station accounted for about 12% of all users. Any reasons for that? 
+
+
+
+--11. How many trip were taken om the next day after the start of a trip?
+
+WITH cte_start_trip AS
+	(SELECT started_at, 
+	DATEPART(DAY, started_at) AS start_day,
+	DATEPART(DAY, ended_at) AS ended_day
+	FROM bikes)
+
+SELECT COUNT(ended_day - start_day) AS next_day_trip
+FROM cte_start_trip
+WHERE (ended_day - start_day) > 0
+
+-- results: about 376 trips were longevity of 1 day or more
 
